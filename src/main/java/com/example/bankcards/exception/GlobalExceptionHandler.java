@@ -44,6 +44,19 @@ public class GlobalExceptionHandler {
         return createErrorResponse(HttpStatus.CONFLICT, e.getMessage());
     }
 
+    @ExceptionHandler(InsufficientBalanceException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public CommonResponse<Void> handleInsufficientBalance(InsufficientBalanceException e) {
+        log.warn("Insufficient balance: {}, identifier: {}", e.getMessage(), e.getIdentifier());
+        return createErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, e.getMessage());
+    }
+
+    @ExceptionHandler(CardNotActiveException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public CommonResponse<Void> handleCardNotActive(CardNotActiveException e) {
+        log.warn("Card not active: {}, identifier: {}", e.getMessage(), e.getIdentifier());
+        return createErrorResponse(HttpStatus.CONFLICT, e.getMessage());
+    }
 
     // ===== FRAMEWORK EXCEPTIONS =====
     @ExceptionHandler(MethodArgumentNotValidException.class)
