@@ -1,8 +1,18 @@
-#
-# application.yml — главный конфигурационный файл Spring Boot.
+spring:
+  application:
+    name: bankcard
 
-Что нужно сделать:
-  - Указать настройки подключения к базе данных.
-  - Указать порт приложения.
-  - Настроить параметры безопасности и JWT.
-  - Включить Swagger UI.
+  profiles:
+    active: dev
+
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+        default-page-size: 20
+
+  autoconfigure:
+    exclude:  org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
+server:
+  port: 8080
