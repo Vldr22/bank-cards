@@ -9,6 +9,14 @@ spring:
     enabled: true
     change-log: classpath:/db/migration/db.changelog-master.yaml
 
+app:
+  jwt:
+    secret-key: ${JWT_SECRET_KEY}
+    expiration: 86400
+  admin:
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
+
 springdoc:
   api-docs:
     enabled: false
