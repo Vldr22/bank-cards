@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: V1__create_tables.sql
+      relativeToChangelogFile: true
+  - include:
+      file: V2__insert_roles.sql
+      relativeToChangelogFile: true
