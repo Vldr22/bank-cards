@@ -16,6 +16,9 @@ app:
   admin:
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}
+  encryption:
+    key: ${ENCRYPTION_KEY}
+    salt: ${ENCRYPTION_SALT}
 
 springdoc:
   api-docs:

@@ -5,3 +5,6 @@ databaseChangeLog:
   - include:
       file: V2__insert_roles.sql
       relativeToChangelogFile: true
+  - include:
+      file: V3__create_card_block_orders.sql
+      relativeToChangelogFile: true

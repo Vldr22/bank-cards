@@ -15,5 +15,12 @@ public class AlreadyExistsException extends BaseCustomException {
         );
     }
 
+    public static AlreadyExistsException blockOrderByCardId(Long id) {
+        return new AlreadyExistsException(
+                String.format("%s, %d", ErrorMessages.BLOCK_ORDER_ALREADY_EXISTS, id),
+                String.valueOf(id)
+        );
+    }
+
 
 }

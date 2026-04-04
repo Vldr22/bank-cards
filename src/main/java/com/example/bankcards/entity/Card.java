@@ -26,7 +26,7 @@ public class Card {
     @SequenceGenerator(name = "cards_seq", sequenceName = "cards_sequence", allocationSize = 1)
     private Long id;
 
-    @Column(nullable = false, length = 512)
+    @Column(nullable = false, unique = true, length = 512)
     private String cardNumberEncrypted;
 
     @Column(nullable = false)
@@ -54,11 +54,12 @@ public class Card {
     private User user;
 
     public Card(BigDecimal balance, CardStatus status, LocalDate expiresAt,
-                String cardHolder, String cardNumberEncrypted) {
+                String cardHolder, String cardNumberEncrypted, User user) {
         this.balance = balance;
         this.status = status;
         this.expiresAt = expiresAt;
         this.cardHolder = cardHolder;
         this.cardNumberEncrypted = cardNumberEncrypted;
+        this.user = user;
     }
 }

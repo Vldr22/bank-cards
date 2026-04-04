@@ -22,8 +22,8 @@ CREATE TABLE users
 CREATE TABLE cards
 (
     id                    BIGINT PRIMARY KEY      DEFAULT nextval('cards_sequence'),
-    user_id               BIGINT         NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    card_number_encrypted VARCHAR(512)   NOT NULL,
+    user_id               BIGINT         NOT NULL REFERENCES users (id),
+    card_number_encrypted VARCHAR(512)   NOT NULL UNIQUE ,
     card_holder           VARCHAR(255)   NOT NULL,
     expires_at            DATE           NOT NULL,
     status                VARCHAR(20)    NOT NULL CHECK (status IN ('ACTIVE', 'BLOCKED', 'EXPIRED')),
