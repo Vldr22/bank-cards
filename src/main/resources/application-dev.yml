@@ -28,6 +28,8 @@ app:
   encryption:
     key: GJBoohQoSMBorPlhbb2TRBIbnyHQStH5VGzWW2P66kc=
     salt: 4fe802cd2d3bab64
+  scheduler:
+    card-expiration-cron: "0 * * * * *" # раз в минуту
 
 springdoc:
   swagger-ui:
