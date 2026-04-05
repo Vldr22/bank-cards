@@ -11,6 +11,8 @@ import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +32,7 @@ public class UserService {
 
         if (username.isEmpty()) {
             log.error("Authentication missing in spring security context");
-            throw new IllegalArgumentException(SecurityErrorMessages.MISSING_AUTHENTICATION_CONTEXT);
+            throw new IllegalStateException(SecurityErrorMessages.MISSING_AUTHENTICATION_CONTEXT);
         }
 
         return getUserByEmail(username.get());
@@ -44,6 +46,11 @@ public class UserService {
     public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> NotFoundException.userById(id));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<User> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable);
     }
 
     public boolean existsByEmail(String email) {
@@ -64,6 +71,18 @@ public class UserService {
         );
 
         return userRepository.save(user);
+    }
+
+    @Transactional
+    public void updateStatus(Long id, UserStatus status) {
+        User user = getUserById(id);
+        user.setStatus(status);
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        User user = getUserById(id);
+        user.setStatus(UserStatus.DELETED);
     }
 
     public void validateUserStatus(User user) {
