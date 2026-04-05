@@ -102,4 +102,9 @@ public class CardService {
 
     }
 
+    @Transactional
+    public int expireOutdatedCards() {
+        return cardRepository.updateExpiredCards(LocalDate.now(), CardStatus.EXPIRED);
+    }
+
 }

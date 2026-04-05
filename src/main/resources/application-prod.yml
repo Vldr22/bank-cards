@@ -19,6 +19,8 @@ app:
   encryption:
     key: ${ENCRYPTION_KEY}
     salt: ${ENCRYPTION_SALT}
+  scheduler:
+    card-expiration-cron: "0 0 0 * * *" # каждый день в полночь
 
 springdoc:
   api-docs:
