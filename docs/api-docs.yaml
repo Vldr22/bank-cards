@@ -1,0 +1,1533 @@
+openapi: 3.1.0
+info:
+  title: Bank Cards API
+  description: |-
+    REST API для управления банковскими картами с JWT-аутентификацией и ролевым доступом.
+
+    ## Аутентификация
+    * Регистрация через `POST /api/auth/register` — возвращает JWT токен
+    * Вход через `POST /api/auth/login` — возвращает JWT токен
+    * Все защищённые endpoints требуют заголовок `Authorization: Bearer <token>`
+
+    ## Уровни доступа
+    * `ROLE_USER` — просмотр своих карт, переводы между своими картами, запрос на блокировку
+    * `ROLE_ADMIN` — создание/удаление карт, управление пользователями, обработка заявок на блокировку
+
+    ## Формат ответов
+    Все endpoints возвращают `CommonResponse<T>`:
+    ```json
+    {
+      "data": {},
+      "status": "SUCCESS",
+      "timestamp": "2026-04-03T22:18:39"
+    }
+    ```
+
+    Ответ с ошибкой:
+    ```json
+    {
+      "status": "ERROR",
+      "problemDetail": {
+        "type": "about:blank",
+        "title": "Not Found",
+        "status": 404,
+        "detail": "Card not found"
+      },
+      "timestamp": "2026-04-03T22:18:39"
+    }
+    ```
+
+    ## Коды ошибок
+    * `400` — ошибка валидации или неверный формат запроса
+    * `401` — токен отсутствует или истёк
+    * `403` — недостаточно прав или аккаунт заблокирован
+    * `404` — карта или пользователь не найден
+    * `409` — конфликт (пользователь уже существует, заявка на блокировку уже создана)
+    * `422` — недостаточно средств для перевода
+    * `500` — внутренняя ошибка сервера
+  contact:
+    name: Vladimir - GitHub
+    url: https://github.com/Vldr22/bank-cards
+  version: 1.0.0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+security:
+- Bearer Authentication: []
+tags:
+- name: Auth
+  description: Регистрация и вход в систему
+- name: Cards
+  description: Управление своими картами и переводы
+- name: Admin
+  description: "Администрирование карт, пользователей и заявок на блокировку"
+paths:
+  /api/cards/{id}/block-request:
+    post:
+      tags:
+      - Cards
+      summary: Запрос на блокировку карты
+      operationId: blockCard
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "404":
+          description: Карта не найдена
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Карта не активна или заявка на блокировку уже существует
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "200":
+          description: Заявка создана
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseString"
+  /api/cards/transfer:
+    post:
+      tags:
+      - Cards
+      summary: Перевод между своими картами
+      operationId: transfer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransferRequest"
+        required: true
+      responses:
+        "404":
+          description: Карта не найдена
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Карта не активна
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Недостаточно средств
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Перевод на ту же карту
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "200":
+          description: Перевод выполнен
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseString"
+  /api/auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Регистрация пользователя
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+        required: true
+      responses:
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Пользователь с таким email уже существует
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Ошибка валидации
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Unauthorized
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "201":
+          description: Пользователь создан — возвращает JWT токен
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseAuthResponse"
+      security: []
+  /api/auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Вход в систему
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+        required: true
+      responses:
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Аккаунт заблокирован или удалён
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Ошибка валидации
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Неверный email или пароль
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "200":
+          description: Успешно — возвращает JWT токен
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseAuthResponse"
+      security: []
+  /api/admin/cards:
+    get:
+      tags:
+      - Admin
+      summary: Получить постратичный список всех карт с пагинацией
+      operationId: getAllCards
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Недостаточно прав
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "200":
+          description: Успешно
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseAdminCardResponse"
+    post:
+      tags:
+      - Admin
+      summary: Создать карту
+      operationId: createCard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCardRequest"
+        required: true
+      responses:
+        "404":
+          description: Пользователь не найден
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Недостаточно прав
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Ошибка валидации или попытка создать карту для админа
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "201":
+          description: Карта создана
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseAdminCardResponse"
+  /api/admin/users/{id}/status:
+    patch:
+      tags:
+      - Admin
+      summary: Изменить статус пользователя
+      operationId: updateUserStatus
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserStatusRequest"
+        required: true
+      responses:
+        "404":
+          description: Пользователь не найден
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Недостаточно прав
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "200":
+          description: Статус изменён
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseUserResponse"
+  /api/admin/cards/{cardId}/status:
+    patch:
+      tags:
+      - Admin
+      summary: Изменить статус карты
+      operationId: updateCardStatus
+      parameters:
+      - name: cardId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCardStatusRequest"
+        required: true
+      responses:
+        "404":
+          description: Карта не найдена
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Недостаточно прав
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "200":
+          description: Статус изменён
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseAdminCardResponse"
+  /api/admin/block-orders/{cardId}/reject:
+    patch:
+      tags:
+      - Admin
+      summary: Отклонить заявку на блокировку
+      operationId: rejectBlockOrder
+      parameters:
+      - name: cardId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "404":
+          description: Заявка не найдена
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Недостаточно прав
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "200":
+          description: Заявка отклонена
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseString"
+  /api/admin/block-orders/{cardId}/approve:
+    patch:
+      tags:
+      - Admin
+      summary: Одобрить заявку на блокировку
+      operationId: approveBlockOrder
+      parameters:
+      - name: cardId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "404":
+          description: Заявка не найдена
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Недостаточно прав
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "200":
+          description: "Заявка одобрена, карта заблокирована"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseString"
+  /api/cards:
+    get:
+      tags:
+      - Cards
+      summary: Постраничный список карт пользователя с пагинацией
+      operationId: getAllCards_1
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Forbidden
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "200":
+          description: Успешно
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseCardResponse"
+  /api/admin/users:
+    get:
+      tags:
+      - Admin
+      summary: Получить постраничный список всех пользователей с пагинацией
+      operationId: getAllUsers
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Недостаточно прав
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "200":
+          description: Успешно
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseUserResponse"
+  /api/admin/block-orders:
+    get:
+      tags:
+      - Admin
+      summary: Постраничный список зарегистрированных заявок на блокировку карт с
+        пагинацией
+      operationId: getAllCardBlockOrders
+      parameters:
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
+      responses:
+        "404":
+          description: Not Found
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Недостаточно прав
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "200":
+          description: Успешно
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageResponseCardBlockOrderResponse"
+  /api/admin/users/{id}:
+    delete:
+      tags:
+      - Admin
+      summary: Удалить пользователя (через присвоение статуса DELETED)
+      operationId: deleteUser
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "404":
+          description: Пользователь не найден
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Недостаточно прав
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "204":
+          description: Пользователь удалён
+  /api/admin/cards/{cardId}:
+    delete:
+      tags:
+      - Admin
+      summary: Удалить карту
+      operationId: deleteCard
+      parameters:
+      - name: cardId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "404":
+          description: Карта не найдена
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "403":
+          description: Недостаточно прав
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "409":
+          description: Conflict
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "422":
+          description: Unprocessable Entity
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "400":
+          description: Bad Request
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "401":
+          description: Токен отсутствует или истёк
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "500":
+          description: Internal Server Error
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/CommonResponseVoid"
+        "204":
+          description: Карта удалена
+components:
+  schemas:
+    CommonResponseVoid:
+      type: object
+      description: Общий формат ответа API
+      properties:
+        data:
+          description: Данные ответа
+        status:
+          type: string
+          description: Статус ответа
+          enum:
+          - SUCCESS
+          - ERROR
+          example: SUCCESS
+        problemDetail:
+          $ref: "#/components/schemas/ProblemDetail"
+          description: Детали ошибки (только при ERROR)
+        timestamp:
+          type: string
+          format: date-time
+          description: Время ответа
+          example: 2026-04-03T22:18:39
+    ProblemDetail:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        properties:
+          type: object
+          additionalProperties: {}
+    CommonResponseString:
+      type: object
+      description: Общий формат ответа API
+      properties:
+        data:
+          type: string
+          description: Данные ответа
+        status:
+          type: string
+          description: Статус ответа
+          enum:
+          - SUCCESS
+          - ERROR
+          example: SUCCESS
+        problemDetail:
+          $ref: "#/components/schemas/ProblemDetail"
+          description: Детали ошибки (только при ERROR)
+        timestamp:
+          type: string
+          format: date-time
+          description: Время ответа
+          example: 2026-04-03T22:18:39
+    TransferRequest:
+      type: object
+      description: Запрос на перевод между картами
+      properties:
+        fromCardId:
+          type: integer
+          format: int64
+          description: ID карты с которой будут отправлены средства
+          example: 1
+        toCardId:
+          type: integer
+          format: int64
+          description: ID карты на которую будут получены средства
+          example: 2
+        amount:
+          type: number
+          description: Сумма перевода
+          example: "100.00"
+          minimum: 0.01
+      required:
+      - amount
+      - fromCardId
+      - toCardId
+    RegisterRequest:
+      type: object
+      description: Регистрация пользователя в системе
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+          example: user@gmail.com
+          minLength: 1
+        password:
+          type: string
+          description: Пароль
+          example: password123
+          maxLength: 32
+          minLength: 8
+      required:
+      - email
+      - password
+    AuthResponse:
+      type: object
+      description: Ответ с JWT-token
+      properties:
+        token:
+          type: string
+          description: JWT токен
+          example: eyJhbGciOiJIUzM4NCJ9...
+    CommonResponseAuthResponse:
+      type: object
+      description: Общий формат ответа API
+      properties:
+        data:
+          $ref: "#/components/schemas/AuthResponse"
+          description: Данные ответа
+        status:
+          type: string
+          description: Статус ответа
+          enum:
+          - SUCCESS
+          - ERROR
+          example: SUCCESS
+        problemDetail:
+          $ref: "#/components/schemas/ProblemDetail"
+          description: Детали ошибки (только при ERROR)
+        timestamp:
+          type: string
+          format: date-time
+          description: Время ответа
+          example: 2026-04-03T22:18:39
+    LoginRequest:
+      type: object
+      description: Запрос на вход в систему
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+          example: user@gmail.com
+          minLength: 1
+        password:
+          type: string
+          description: Пароль
+          example: password123
+          maxLength: 32
+          minLength: 8
+      required:
+      - email
+      - password
+    CreateCardRequest:
+      type: object
+      description: Запрос на создание карты
+      properties:
+        userId:
+          type: integer
+          format: int64
+          description: ID пользователя
+          example: 1
+        cardHolder:
+          type: string
+          description: Имя владельца карты
+          example: IVAN IVANOV
+          maxLength: 255
+          minLength: 0
+        initialBalance:
+          type: number
+          description: Начальный баланс
+          example: "100.00"
+          minimum: 0.0
+      required:
+      - cardHolder
+      - initialBalance
+      - userId
+    AdminCardResponse:
+      type: object
+      description: Информация о банковской карте для админа
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ID карты
+          example: 1
+        maskedNumber:
+          type: string
+          description: Маскированный номер карты
+          example: '**** **** **** 1234'
+        cardHolder:
+          type: string
+          description: Имя владельца
+          example: IVAN IVANOV
+        expiresAt:
+          type: string
+          format: date
+          description: Срок действия
+          example: 2030-05-03
+        status:
+          type: string
+          description: Статус карты
+          enum:
+          - ACTIVE
+          - BLOCKED
+          - EXPIRED
+          example: ACTIVE
+        balance:
+          type: number
+          description: Баланс
+          example: "100.00"
+    CommonResponseAdminCardResponse:
+      type: object
+      description: Общий формат ответа API
+      properties:
+        data:
+          $ref: "#/components/schemas/AdminCardResponse"
+          description: Данные ответа
+        status:
+          type: string
+          description: Статус ответа
+          enum:
+          - SUCCESS
+          - ERROR
+          example: SUCCESS
+        problemDetail:
+          $ref: "#/components/schemas/ProblemDetail"
+          description: Детали ошибки (только при ERROR)
+        timestamp:
+          type: string
+          format: date-time
+          description: Время ответа
+          example: 2026-04-03T22:18:39
+    UpdateUserStatusRequest:
+      type: object
+      description: Запрос на изменение статуса пользователя
+      properties:
+        userStatus:
+          type: string
+          description: Новый статус пользователя
+          enum:
+          - ACTIVE
+          - BLOCKED
+          - DELETED
+          example: BLOCKED
+      required:
+      - userStatus
+    CommonResponseUserResponse:
+      type: object
+      description: Общий формат ответа API
+      properties:
+        data:
+          $ref: "#/components/schemas/UserResponse"
+          description: Данные ответа
+        status:
+          type: string
+          description: Статус ответа
+          enum:
+          - SUCCESS
+          - ERROR
+          example: SUCCESS
+        problemDetail:
+          $ref: "#/components/schemas/ProblemDetail"
+          description: Детали ошибки (только при ERROR)
+        timestamp:
+          type: string
+          format: date-time
+          description: Время ответа
+          example: 2026-04-03T22:18:39
+    UserResponse:
+      type: object
+      description: Информация о пользователе
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ID пользователя
+          example: 1
+        email:
+          type: string
+          description: Email пользователя
+          example: user@gmail.com
+        status:
+          type: string
+          description: Статус пользователя
+          enum:
+          - ACTIVE
+          - BLOCKED
+          - DELETED
+          example: ACTIVE
+        role:
+          type: string
+          description: Роль пользователя
+          enum:
+          - ROLE_ADMIN
+          - ROLE_USER
+          example: ROLE_USER
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата регистрации
+          example: 2026-05-03T22:18:39
+    UpdateCardStatusRequest:
+      type: object
+      description: Запрос на изменение статуса карты
+      properties:
+        status:
+          type: string
+          description: Новый статус карты
+          enum:
+          - ACTIVE
+          - BLOCKED
+          - EXPIRED
+          example: BLOCKED
+      required:
+      - status
+    Pageable:
+      type: object
+      properties:
+        page:
+          type: integer
+          format: int32
+          minimum: 0
+        size:
+          type: integer
+          format: int32
+          minimum: 1
+        sort:
+          type: array
+          items:
+            type: string
+    CardResponse:
+      type: object
+      description: Информация о банковской карте для пользователя
+      properties:
+        maskedNumber:
+          type: string
+          description: Маскированный номер карты
+          example: '**** **** **** 1234'
+        cardHolder:
+          type: string
+          description: Имя владельца
+          example: IVAN IVANOV
+        expiresAt:
+          type: string
+          format: date
+          description: Срок действия
+          example: 2030-05-03
+        status:
+          type: string
+          description: Статус карты
+          enum:
+          - ACTIVE
+          - BLOCKED
+          - EXPIRED
+          example: ACTIVE
+        balance:
+          type: number
+          description: Баланс
+          example: "100.00"
+    PageResponseCardResponse:
+      type: object
+      description: Постраничный ответ с пагинацией
+      properties:
+        content:
+          type: array
+          description: Список элементов
+          items:
+            $ref: "#/components/schemas/CardResponse"
+        pageNumber:
+          type: integer
+          format: int32
+          description: Номер текущей страницы
+          example: 0
+        pageSize:
+          type: integer
+          format: int32
+          description: Размер страницы
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: Общее количество элементов
+          example: 100
+        totalPages:
+          type: integer
+          format: int32
+          description: Общее количество страниц
+          example: 5
+        last:
+          type: boolean
+          description: Последняя ли страница
+          example: false
+    PageResponseUserResponse:
+      type: object
+      description: Постраничный ответ с пагинацией
+      properties:
+        content:
+          type: array
+          description: Список элементов
+          items:
+            $ref: "#/components/schemas/UserResponse"
+        pageNumber:
+          type: integer
+          format: int32
+          description: Номер текущей страницы
+          example: 0
+        pageSize:
+          type: integer
+          format: int32
+          description: Размер страницы
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: Общее количество элементов
+          example: 100
+        totalPages:
+          type: integer
+          format: int32
+          description: Общее количество страниц
+          example: 5
+        last:
+          type: boolean
+          description: Последняя ли страница
+          example: false
+    PageResponseAdminCardResponse:
+      type: object
+      description: Постраничный ответ с пагинацией
+      properties:
+        content:
+          type: array
+          description: Список элементов
+          items:
+            $ref: "#/components/schemas/AdminCardResponse"
+        pageNumber:
+          type: integer
+          format: int32
+          description: Номер текущей страницы
+          example: 0
+        pageSize:
+          type: integer
+          format: int32
+          description: Размер страницы
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: Общее количество элементов
+          example: 100
+        totalPages:
+          type: integer
+          format: int32
+          description: Общее количество страниц
+          example: 5
+        last:
+          type: boolean
+          description: Последняя ли страница
+          example: false
+    CardBlockOrderResponse:
+      type: object
+      description: Информация о заявке на блокировку карты
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: ID заявки
+          example: 1
+        cardId:
+          type: integer
+          format: int64
+          description: ID карты
+          example: 1
+        maskedCardNumber:
+          type: string
+          description: Маскированный номер карты
+          example: '**** **** **** 1234'
+        userId:
+          type: integer
+          format: int64
+          description: ID пользователя
+          example: 1
+        userEmail:
+          type: string
+          description: Email пользователя
+          example: user@gmail.com
+        status:
+          type: string
+          description: Статус заявки
+          enum:
+          - PENDING
+          - APPROVED
+          - REJECTED
+          example: PENDING
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата создания заявки
+          example: 2026-05-03T22:18:39
+    PageResponseCardBlockOrderResponse:
+      type: object
+      description: Постраничный ответ с пагинацией
+      properties:
+        content:
+          type: array
+          description: Список элементов
+          items:
+            $ref: "#/components/schemas/CardBlockOrderResponse"
+        pageNumber:
+          type: integer
+          format: int32
+          description: Номер текущей страницы
+          example: 0
+        pageSize:
+          type: integer
+          format: int32
+          description: Размер страницы
+          example: 20
+        totalElements:
+          type: integer
+          format: int64
+          description: Общее количество элементов
+          example: 100
+        totalPages:
+          type: integer
+          format: int32
+          description: Общее количество страниц
+          example: 5
+        last:
+          type: boolean
+          description: Последняя ли страница
+          example: false
+  securitySchemes:
+    Bearer Authentication:
+      type: http
+      description: "JWT токен, полученный через POST /api/auth/login"
+      name: Bearer Authentication
+      scheme: bearer
+      bearerFormat: JWT
