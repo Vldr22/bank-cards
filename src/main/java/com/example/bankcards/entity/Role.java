@@ -2,6 +2,7 @@ package com.example.bankcards.entity;
 
 import com.example.bankcards.enums.UserRole;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +12,7 @@ import lombok.Setter;
 @Entity
 @Table(name = "roles")
 @NoArgsConstructor
+@AllArgsConstructor
 public class Role {
 
     @Id
@@ -21,4 +23,5 @@ public class Role {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, unique = true, length = 20)
     private UserRole name;
+
 }
