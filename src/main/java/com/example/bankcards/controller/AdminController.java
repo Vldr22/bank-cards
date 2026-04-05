@@ -5,8 +5,10 @@ import com.example.bankcards.dto.CommonResponse;
 import com.example.bankcards.dto.PageResponse;
 import com.example.bankcards.dto.request.CreateCardRequest;
 import com.example.bankcards.dto.request.UpdateCardStatusRequest;
+import com.example.bankcards.dto.request.UpdateUserStatusRequest;
 import com.example.bankcards.dto.response.AdminCardResponse;
 import com.example.bankcards.dto.response.CardBlockOrderResponse;
+import com.example.bankcards.dto.response.UserResponse;
 import com.example.bankcards.service.facade.AdminFacade;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,26 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminFacade adminFacade;
+
+    //===== USERS =====
+    @GetMapping("/users")
+    public PageResponse<UserResponse> getAllUsers(Pageable pageable) {
+        return PageResponse.of(adminFacade.getAllUsers(pageable));
+    }
+
+    @PatchMapping("/users/{id}/status")
+    public CommonResponse<UserResponse> updateUserStatus(
+            @PathVariable Long id,
+            @RequestBody @Valid UpdateUserStatusRequest request
+    ) {
+        return CommonResponse.success(adminFacade.updateUserStatus(id, request));
+    }
+
+    @DeleteMapping("/users/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable Long id) {
+       adminFacade.deleteUser(id);
+    }
 
     // ===== CARDS =====
     @GetMapping("/cards")

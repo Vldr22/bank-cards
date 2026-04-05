@@ -3,8 +3,10 @@ package com.example.bankcards.service.facade;
 import com.example.bankcards.constants.ErrorMessages;
 import com.example.bankcards.dto.request.CreateCardRequest;
 import com.example.bankcards.dto.request.UpdateCardStatusRequest;
+import com.example.bankcards.dto.request.UpdateUserStatusRequest;
 import com.example.bankcards.dto.response.AdminCardResponse;
 import com.example.bankcards.dto.response.CardBlockOrderResponse;
+import com.example.bankcards.dto.response.UserResponse;
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.CardBlockOrder;
 import com.example.bankcards.entity.User;
@@ -33,6 +35,25 @@ public class AdminFacade {
     private final CardBlockOrderService cardBlockOrderService;
     private final CardEncryptionUtil cardEncryptionUtil;
 
+    // ===== USERS =====
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+        return userService.getAllUsers(pageable)
+                .map(this::toUserResponse);
+    }
+
+    public UserResponse updateUserStatus(Long id, UpdateUserStatusRequest request) {
+        userService.updateStatus(id, request.userStatus());
+        User user = userService.getUserById(id);
+        log.info("Admin updated user status: userId: {}, userStatus: {}", id, request.userStatus());
+        return toUserResponse(user);
+    }
+
+    public void deleteUser(Long id) {
+        userService.deleteUser(id);
+        log.info("Admin deleted user: userId: {}", id);
+    }
+
+    // ===== CARDS =====
     public Page<AdminCardResponse> getAllCards(Pageable pageable) {
         return cardService.getAllCards(pageable)
                 .map(this::toAdminCardResponse);
@@ -90,6 +111,17 @@ public class AdminFacade {
         String tempCardNumber = CardNumberGenerator.generate();
         return cardEncryptionUtil.encrypt(tempCardNumber);
     }
+
+    private UserResponse toUserResponse(User user) {
+        return new UserResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getStatus(),
+                user.getRole().getName(),
+                user.getCreatedAt()
+        );
+    }
+
 
     private AdminCardResponse toAdminCardResponse(Card card) {
         return new AdminCardResponse(
