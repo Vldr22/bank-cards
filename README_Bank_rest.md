@@ -43,8 +43,8 @@ REST API для управления банковскими картами с JW
 ## Быстрый старт
 
 ```bash
-git clone https://github.com/Vldr22/bank_rest.git
-cd bank_rest
+git clone https://github.com/Vldr22/bank-rest.git
+cd bank-rest
 cp .env.example .env
 docker compose -f docker-compose-prod.yml up -d --build
 ```
